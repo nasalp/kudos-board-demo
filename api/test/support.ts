@@ -13,7 +13,7 @@ export interface TestDb {
 // Postgres refuses to copy a template that another CREATE DATABASE is copying at the same moment.
 const CREATE_DB_LOCK = 4242;
 
-/** A private copy of the app's database (schema + seed) on the shared test Postgres, dropped on stop(). */
+/** A private copy of the app's database (schema + seed) on the shared test Postgres. */
 export async function startTestDb(): Promise<TestDb> {
   const serverUri = inject("pgUri");
   const name = `kudos_test_${randomUUID().replaceAll("-", "")}`;
@@ -38,8 +38,9 @@ export async function startTestDb(): Promise<TestDb> {
       await pool.query("TRUNCATE kudos RESTART IDENTITY");
     },
     async stop() {
+      // No DROP DATABASE: the whole container is discarded after the run, and a forced drop races with
+      // connections that are still closing (they then fail with "terminating connection").
       await pool.end();
-      await admin.query(`DROP DATABASE ${name} WITH (FORCE)`);
       await admin.end();
     },
   };
