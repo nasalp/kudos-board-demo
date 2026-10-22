@@ -88,11 +88,9 @@ export async function giveKudos(
     };
   } catch (err) {
     failure = err as Error;
-    // A failed ROLLBACK must not hide the original error.
-    await client.query("ROLLBACK").catch(() => {});
     throw err;
   } finally {
-    // Passing the error discards a possibly broken connection instead of returning it to the pool.
+    // On an error the connection is discarded, not pooled: closing it rolls back the open transaction.
     client.release(failure);
   }
 }

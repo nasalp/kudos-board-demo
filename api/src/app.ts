@@ -17,6 +17,7 @@ function parseUserId(value: unknown): number | null {
 }
 
 // Only "UTC" or IANA region names (e.g. "Europe/Warsaw"): offsets like "+05:00" mean the opposite sign in Postgres.
+// Stryker disable next-line Regex: dropping ^ or $ is equivalent, the Intl check below rejects anything extra
 const REGION_TIME_ZONE = /^(UTC|[A-Za-z]+(\/[A-Za-z0-9_+-]+)+)$/;
 
 /** Fails at startup on a misconfigured team time zone instead of on every kudos. */

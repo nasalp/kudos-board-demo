@@ -225,6 +225,6 @@ CHECKPOINT after each AC.
   simultaneous mutual kudos both accepted, allowance endpoint correct through nginx.
 - AC-LIMIT-7 board display: the API part is automated; the "N of 3 kudos left today"
   text and disabled buttons are checked by hand (the repo has no front-end test setup).
-- Coverage / mutation tooling: not configured in this repo.
+- Mutation testing (added later, ADR 0001): 100% of mutants in `src/` killed; the AC-LIMIT-3 and AC-LIMIT-7 tests were extended (multi-part time zones, user-id limits, error messages).
 - Reviewer approval: requirements-reviewer APPROVE; adversary round 1 found a deadlock
   and an error-masking rollback (both fixed); round 2 APPROVE.

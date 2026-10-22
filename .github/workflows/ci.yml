@@ -33,6 +33,33 @@ jobs:
       - name: Acceptance tests (Postgres via Testcontainers)
         run: npm test
 
+  mutation-tests:
+    name: Mutation tests (Stryker)
+    # ~9 minutes on GitHub runners, so only for pull requests and manual runs, not every push to main.
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci
+      - name: Stryker (fails below the break threshold in stryker.config.mjs)
+        run: npm run mutation
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mutation-report
+          path: api/reports/mutation/
+          if-no-files-found: ignore
+
   spec-traceability:
     name: Every Gherkin scenario has a test
     runs-on: ubuntu-latest
