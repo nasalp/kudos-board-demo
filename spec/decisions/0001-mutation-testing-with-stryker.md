@@ -22,12 +22,13 @@ tests run against a real Postgres (Testcontainers).
 - **Faster tests:** one Postgres container per test run, with a template database copied per test file,
   so a mutant run takes about 2 s instead of starting a container per file.
 - **Gate:** CI job `mutation-tests` on pull requests and manual runs (not on push to `main`, ~4 min).
-  It fails below a score of **80%** (`thresholds.break`). First real run: 85.09%
-  (135 killed, 2 timeouts, 24 survived, 161 mutants). The HTML report is uploaded as an artifact.
+  It fails below a score of **70%** (`thresholds.break`). Baseline: **73.91%** (117 killed, 2 timeouts,
+  42 survived, 161 mutants), identical survivors locally and on GitHub's runner. The HTML report is
+  uploaded as an artifact.
 
 ## Inputs / outputs / compatibility
 
-- Input: the API source and acceptance tests. Output: a score and an HTML report; exit code 1 below 80%.
+- Input: the API source and acceptance tests. Output: a score and an HTML report; exit code 1 below 70%.
 - No change to app behaviour or to `npm test` results. Existing CI jobs are unchanged.
 - PR review: survivors in lines a PR added must be killed; survivors in untouched lines are legacy debt
   (harness rule `common/testing.md`, PR-owned vs legacy scoring).
@@ -41,4 +42,8 @@ tests run against a real Postgres (Testcontainers).
 ## Verification
 
 - A mutant range that "survived" under the Vitest runner (`kudos.ts:139-141`) is killed by the command runner.
-- `npm run mutation` locally: 85.09%, 3 min 45 s on an M-series Mac with `concurrency: 4`.
+- `npm run mutation`: 73.91% locally (3 min 37 s, M-series Mac, `concurrency: 4`) and on GitHub Actions
+  (9 min), with the same 42 survivors.
+- An earlier local run reported 85.09%: a flaky test cleanup (forced `DROP DATABASE`) failed random test
+  runs, which Stryker counts as kills. Fixed before the baseline was taken; see
+  `spec/learnings/mutation-score-inflated-by-flaky-tests.md`.

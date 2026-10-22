@@ -35,7 +35,7 @@ jobs:
 
   mutation-tests:
     name: Mutation tests (Stryker)
-    # ~4 minutes, so only for pull requests and manual runs, not every push to main.
+    # ~9 minutes on GitHub runners, so only for pull requests and manual runs, not every push to main.
     if: github.event_name != 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 20
