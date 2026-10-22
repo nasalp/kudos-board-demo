@@ -1,6 +1,6 @@
 import express, { type Request, type Response } from "express";
 import type { Pool } from "pg";
-import { allowance, giveKudos, type KudosDay, leaderboard, listUsers, recentKudos } from "./kudos";
+import { allowance, giveKudos, type KudosDay, kudosReceived, leaderboard, listUsers, recentKudos } from "./kudos";
 
 export interface AppOptions {
   /** Clock used to decide which day a kudos belongs to. Defaults to the system clock. */
@@ -53,6 +53,20 @@ export function createApp(pool: Pool, options: AppOptions = {}) {
       return;
     }
     const result = await allowance(pool, userId, day);
+    if (!result) {
+      res.status(404).json({ error: "Unknown team member." });
+      return;
+    }
+    res.json(result);
+  });
+
+  app.get("/api/users/:id/recieved", async (req: Request, res: Response) => {
+    const userId = parseUserId(req.params.id);
+    if (userId === null) {
+      res.status(400).json({ error: "A valid team member id is required." });
+      return;
+    }
+    const result = await kudosReceived(pool, userId);
     if (!result) {
       res.status(404).json({ error: "Unknown team member." });
       return;

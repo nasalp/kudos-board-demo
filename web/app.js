@@ -52,6 +52,15 @@ function renderAllowance({ limit, remaining }) {
   for (const btn of $("teammates").querySelectorAll("button")) btn.disabled = remaining === 0;
 }
 
+async function showReceived() {
+  try {
+    const { received } = await api(`/users/${me()}/received`);
+    showMessage(`You've received ${received} kudos`, "ok");
+  } catch (err) {
+    showMessage(err.message, "error");
+  }
+}
+
 async function refresh() {
   const seq = ++refreshSeq;
   const [board, recent, allowance] = await Promise.all([
@@ -95,6 +104,7 @@ async function init() {
     renderTeammates();
     refresh().catch((err) => showMessage(err.message, "error"));
   });
+  $("received-btn").addEventListener("click", showReceived);
   renderTeammates();
   await refresh();
 }

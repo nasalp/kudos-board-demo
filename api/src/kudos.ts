@@ -95,6 +95,19 @@ export async function giveKudos(
   }
 }
 
+/** Total kudos a team member has received, or null for an unknown team member. */
+export async function kudosReceived(pool: Pool, userId: number): Promise<{ name: string; received: number } | null> {
+  const { rows } = await pool.query<{ name: string; received: string }>(
+    `SELECT u.name, COUNT(k.id) AS received
+       FROM users u
+       LEFT JOIN kudos k ON k.to_user = u.id
+      WHERE u.id = $1
+      GROUP BY u.name`,
+    [userId],
+  );
+  return rows[0] ? { name: rows[0].name, received: Number(rows[0].received) } : null;
+}
+
 /** The giver's allowance for today, or null for an unknown team member. */
 export async function allowance(pool: Pool, userId: number, day: KudosDay): Promise<Allowance | null> {
   const { rows } = await pool.query("SELECT 1 FROM users WHERE id = $1", [userId]);
