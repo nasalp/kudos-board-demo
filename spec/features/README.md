@@ -14,6 +14,7 @@ One file per feature at `spec/features/<slug>/<slug>.md`. Each file contains eve
 |---------|--------|---------|-----|------|
 | `daily-kudos-limit` | implemented | 2 | 7 | [daily-kudos-limit/daily-kudos-limit.md](daily-kudos-limit/daily-kudos-limit.md) |
 | `give-kudos` | implemented | 2 | 7 | [give-kudos/give-kudos.md](give-kudos/give-kudos.md) |
+| `most-generous` | in-progress | 1 | 2 | [most-generous/most-generous.md](most-generous/most-generous.md) |
 
 ## Adding a feature
 

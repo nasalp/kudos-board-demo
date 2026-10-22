@@ -1,6 +1,6 @@
 import express, { type Request, type Response } from "express";
 import type { Pool } from "pg";
-import { allowance, giveKudos, type KudosDay, leaderboard, listUsers, recentKudos } from "./kudos";
+import { allowance, giveKudos, type KudosDay, leaderboard, listUsers, mostGenerous, recentKudos } from "./kudos";
 
 export interface AppOptions {
   /** Clock used to decide which day a kudos belongs to. Defaults to the system clock. */
@@ -78,6 +78,10 @@ export function createApp(pool: Pool, options: AppOptions = {}) {
 
   app.get("/api/leaderboard", async (_req: Request, res: Response) => {
     res.json(await leaderboard(pool));
+  });
+
+  app.get("/api/leaderboard/givers", async (_req: Request, res: Response) => {
+    res.json(await mostGenerous(pool));
   });
 
   app.get("/api/kudos/recent", async (_req: Request, res: Response) => {
