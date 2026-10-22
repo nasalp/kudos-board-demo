@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kudos Board</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Kudos Board</h1>
+      <label class="who">You:
+        <select id="me" aria-label="Who are you?"></select>
+      </label>
+    </header>
+
+    <section aria-labelledby="give-title">
+      <h2 id="give-title">Give kudos to</h2>
+      <div id="teammates" class="buttons"></div>
+      <p id="message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section aria-labelledby="board-title">
+      <h2 id="board-title">Leaderboard</h2>
+      <ol id="leaderboard"></ol>
+      <p id="board-empty" class="muted">No kudos yet — be the first!</p>
+    </section>
+
+    <section aria-labelledby="recent-title">
+      <h2 id="recent-title">Recent kudos</h2>
+      <ul id="recent"></ul>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

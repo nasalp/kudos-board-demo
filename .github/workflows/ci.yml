@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-tests:
+    name: API tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Acceptance tests (Postgres via Testcontainers)
+        run: npm test
+
+  spec-traceability:
+    name: Every Gherkin scenario has a test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: nasalp/claude-code-starter
+          path: .harness
+      - run: bash .harness/scripts/verify-ac-tests.sh --spec-dir spec/features --src-root api
+
+  compose-smoke:
+    name: Docker Compose smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Start the stack
+        run: docker compose up -d --build --wait
+      - name: Front end is served
+        run: curl -fsS http://localhost:8080/ | grep -q "Kudos Board"
+      - name: Give kudos through the front end's proxy
+        run: |
+          curl -fsS http://localhost:8080/api/users
+          curl -fsS -X POST http://localhost:8080/api/kudos \
+            -H 'Content-Type: application/json' -d '{"fromUserId":1,"toUserId":2}'
+          curl -fsS http://localhost:8080/api/leaderboard | grep -q '"count":1'
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs
+      - name: Stop the stack
+        if: always()
+        run: docker compose down -v
