@@ -115,7 +115,7 @@ Scenario: Recent kudos are shown newest first
 - Giving kudos, the leaderboard and the recent list.
 
 ### Out of scope
-- Limits on how many kudos someone can give (see backlog in README).
+- Limits on how many kudos someone can give (see `daily-kudos-limit`).
 - Undoing kudos, weekly resets, sign-in.
 
 ### Not changing

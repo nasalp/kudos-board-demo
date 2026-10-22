@@ -6,6 +6,6 @@ const pool = new Pool({
 });
 const port = Number(process.env.PORT ?? 3000);
 
-createApp(pool).listen(port, () => {
+createApp(pool, { timeZone: process.env.TEAM_TIME_ZONE || "UTC" }).listen(port, () => {
   console.log(`Kudos API listening on :${port}`);
 });

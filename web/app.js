@@ -1,6 +1,7 @@
 // Kudos Board front end — plain JS, no build step.
 const $ = (id) => document.getElementById(id);
 let users = [];
+let refreshSeq = 0;
 
 async function api(path, options) {
   const res = await fetch(`/api${path}`, {
@@ -42,11 +43,25 @@ async function give(to) {
     await refresh();
   } catch (err) {
     showMessage(err.message, "error");
+    await refresh().catch(() => {});
   }
 }
 
+function renderAllowance({ limit, remaining }) {
+  $("allowance").textContent = `${remaining} of ${limit} kudos left today`;
+  for (const btn of $("teammates").querySelectorAll("button")) btn.disabled = remaining === 0;
+}
+
 async function refresh() {
-  const [board, recent] = await Promise.all([api("/leaderboard"), api("/kudos/recent")]);
+  const seq = ++refreshSeq;
+  const [board, recent, allowance] = await Promise.all([
+    api("/leaderboard"),
+    api("/kudos/recent"),
+    api(`/users/${me()}/allowance`),
+  ]);
+  // A slower response for a previously selected person must not overwrite the current one.
+  if (seq !== refreshSeq) return;
+  renderAllowance(allowance);
 
   $("leaderboard").replaceChildren(
     ...board.map((e) => {
@@ -76,7 +91,9 @@ async function init() {
   select.addEventListener("change", () => {
     localStorage.setItem("kudos.me", select.value);
     showMessage("");
+    $("allowance").textContent = "";
     renderTeammates();
+    refresh().catch((err) => showMessage(err.message, "error"));
   });
   renderTeammates();
   await refresh();

@@ -1,4 +1,12 @@
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
+
+export const DAILY_KUDOS_LIMIT = 3;
+
+/** What "today" means: the current time and the team's time zone (IANA name, e.g. "UTC", "Europe/Warsaw"). */
+export interface KudosDay {
+  now: () => Date;
+  timeZone: string;
+}
 
 export interface User {
   id: number;
@@ -17,35 +25,96 @@ export interface LeaderboardEntry {
   count: number;
 }
 
+export interface Allowance {
+  limit: number;
+  given: number;
+  remaining: number;
+}
+
 export type GiveKudosResult =
-  | { ok: true; kudos: Kudos }
-  | { ok: false; reason: "SELF_KUDOS" | "UNKNOWN_USER"; message: string };
+  | { ok: true; kudos: Kudos; remainingToday: number }
+  | { ok: false; reason: "SELF_KUDOS" | "UNKNOWN_USER" | "DAILY_LIMIT"; message: string };
 
 export async function listUsers(pool: Pool): Promise<User[]> {
   const { rows } = await pool.query<User>("SELECT id, name FROM users ORDER BY name");
   return rows;
 }
 
-export async function giveKudos(pool: Pool, fromUserId: number, toUserId: number): Promise<GiveKudosResult> {
+export async function giveKudos(
+  pool: Pool,
+  fromUserId: number,
+  toUserId: number,
+  day: KudosDay,
+): Promise<GiveKudosResult> {
   if (fromUserId === toUserId) {
     return { ok: false, reason: "SELF_KUDOS", message: "You can't give kudos to yourself." };
   }
-  const { rows: users } = await pool.query<User>("SELECT id, name FROM users WHERE id = ANY($1)", [
-    [fromUserId, toUserId],
-  ]);
-  const from = users.find((u) => u.id === fromUserId);
-  const to = users.find((u) => u.id === toUserId);
-  if (!from || !to) {
-    return { ok: false, reason: "UNKNOWN_USER", message: "Unknown team member." };
+  const client = await pool.connect();
+  let failure: Error | undefined;
+  try {
+    await client.query("BEGIN");
+    // Locking the giver's row serialises their concurrent kudos, so the daily count can't be raced past the limit.
+    // NO KEY UPDATE (not UPDATE) doesn't block the foreign-key check of kudos *to* this person, so two teammates
+    // giving each other kudos at the same moment don't deadlock.
+    const { rows: fromRows } = await client.query<User>("SELECT id, name FROM users WHERE id = $1 FOR NO KEY UPDATE", [
+      fromUserId,
+    ]);
+    const { rows: toRows } = await client.query<User>("SELECT id, name FROM users WHERE id = $1", [toUserId]);
+    const from = fromRows[0];
+    const to = toRows[0];
+    if (!from || !to) {
+      await client.query("ROLLBACK");
+      return { ok: false, reason: "UNKNOWN_USER", message: "Unknown team member." };
+    }
+    const now = day.now();
+    const given = await countGivenToday(client, fromUserId, now, day.timeZone);
+    if (given >= DAILY_KUDOS_LIMIT) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        reason: "DAILY_LIMIT",
+        message: `You've used all ${DAILY_KUDOS_LIMIT} kudos for today. Come back tomorrow!`,
+      };
+    }
+    const { rows } = await client.query<{ id: number; created_at: Date }>(
+      "INSERT INTO kudos (from_user, to_user, created_at) VALUES ($1, $2, $3) RETURNING id, created_at",
+      [fromUserId, toUserId, now],
+    );
+    await client.query("COMMIT");
+    return {
+      ok: true,
+      kudos: { id: rows[0].id, from: from.name, to: to.name, createdAt: rows[0].created_at.toISOString() },
+      remainingToday: DAILY_KUDOS_LIMIT - given - 1,
+    };
+  } catch (err) {
+    failure = err as Error;
+    // A failed ROLLBACK must not hide the original error.
+    await client.query("ROLLBACK").catch(() => {});
+    throw err;
+  } finally {
+    // Passing the error discards a possibly broken connection instead of returning it to the pool.
+    client.release(failure);
   }
-  const { rows } = await pool.query<{ id: number; created_at: Date }>(
-    "INSERT INTO kudos (from_user, to_user) VALUES ($1, $2) RETURNING id, created_at",
-    [fromUserId, toUserId],
+}
+
+/** The giver's allowance for today, or null for an unknown team member. */
+export async function allowance(pool: Pool, userId: number, day: KudosDay): Promise<Allowance | null> {
+  const { rows } = await pool.query("SELECT 1 FROM users WHERE id = $1", [userId]);
+  if (rows.length === 0) return null;
+  const given = await countGivenToday(pool, userId, day.now(), day.timeZone);
+  return { limit: DAILY_KUDOS_LIMIT, given, remaining: Math.max(0, DAILY_KUDOS_LIMIT - given) };
+}
+
+async function countGivenToday(db: Pool | PoolClient, fromUserId: number, now: Date, timeZone: string) {
+  const { rows } = await db.query<{ n: string }>(
+    `SELECT COUNT(*) AS n
+       FROM kudos
+      WHERE from_user = $1
+        AND created_at >= (date_trunc('day', $2::timestamptz AT TIME ZONE $3) AT TIME ZONE $3)
+        AND created_at < ((date_trunc('day', $2::timestamptz AT TIME ZONE $3) + interval '1 day') AT TIME ZONE $3)`,
+    [fromUserId, now, timeZone],
   );
-  return {
-    ok: true,
-    kudos: { id: rows[0].id, from: from.name, to: to.name, createdAt: rows[0].created_at.toISOString() },
-  };
+  return Number(rows[0].n);
 }
 
 export async function leaderboard(pool: Pool): Promise<LeaderboardEntry[]> {
