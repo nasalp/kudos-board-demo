@@ -21,6 +21,7 @@ services:
     environment:
       DATABASE_URL: postgres://kudos:kudos@db:5432/kudos
       PORT: "3000"
+      TEAM_TIME_ZONE: ${TEAM_TIME_ZONE:-UTC}   # the daily kudos allowance resets at midnight here
     depends_on:
       db:
         condition: service_healthy

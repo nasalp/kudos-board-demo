@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import { Pool } from "pg";
@@ -13,11 +13,11 @@ export interface TestDb {
   stop(): Promise<void>;
 }
 
-/** Starts a real Postgres 16 in Docker and loads the same schema + seed the app uses. */
+/** Starts a real Postgres 16 in Docker and loads every db/*.sql file in order, like the app's database. */
 export async function startTestDb(): Promise<TestDb> {
   const container = await new PostgreSqlContainer("postgres:16-alpine").start();
   const pool = new Pool({ connectionString: container.getConnectionUri() });
-  for (const file of ["01-schema.sql", "02-seed.sql"]) {
+  for (const file of readdirSync(DB_DIR).filter((f) => f.endsWith(".sql")).sort()) {
     await pool.query(readFileSync(join(DB_DIR, file), "utf8"));
   }
   return {

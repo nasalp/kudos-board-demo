@@ -40,12 +40,16 @@ Used to demonstrate spec-first development with Claude Code and the
 
 | Path | Contents |
 |------|----------|
-| `api/src/kudos.ts` | Business rules: give kudos, leaderboard, recent list |
-| `api/src/app.ts` | Express routes (`/api/users`, `/api/kudos`, `/api/leaderboard`, `/api/kudos/recent`) |
+| `api/src/kudos.ts` | Business rules: give kudos (with the daily limit), allowance, leaderboard, recent list |
+| `api/src/app.ts` | Express routes (`/api/users`, `/api/users/:id/allowance`, `/api/kudos`, `/api/leaderboard`, `/api/kudos/recent`) |
 | `api/db/` | SQL schema + seed |
 | `api/test/` | Acceptance tests + Testcontainers helper |
 | `web/` | Front end (`index.html`, `app.js`, `style.css`) and nginx config |
 | `spec/` | Feature specs (Gherkin acceptance criteria) |
+
+## Configuration
+
+- `TEAM_TIME_ZONE` (default `UTC`) — the daily kudos allowance resets at midnight in this zone.
 
 ## External services
 

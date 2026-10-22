@@ -39,6 +39,7 @@ after its AC ID, and smoke-tests the full Docker Compose stack.
 | Feature | Spec | Status |
 |---------|------|--------|
 | Give kudos | [`spec/features/give-kudos/give-kudos.md`](spec/features/give-kudos/give-kudos.md) | implemented |
+| Daily kudos limit (3 per day) | [`spec/features/daily-kudos-limit/daily-kudos-limit.md`](spec/features/daily-kudos-limit/daily-kudos-limit.md) | implemented |
 
 ## Demo script: creating a spec live
 
@@ -63,7 +64,6 @@ Prerequisite: the harness is installed (`./setup.sh` in claude-code-starter).
 
 | Feature | Why it makes good scenarios |
 |---------|-----------------------------|
-| Daily limit: max 3 kudos per person per day | Happy path, limit reached, limit resets next day, counter shown in the UI |
 | Undo within 30 seconds | Undo inside the window, after the window, only your own kudos |
 | Weekly leaderboard | Only this week's kudos count; last week's are ignored |
 | Kudos with a short message | Optional text, max length, shown in the recent list |
