@@ -1,31 +1,37 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
+import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
-
-const DB_DIR = join(__dirname, "..", "db");
+import { inject } from "vitest";
+import { dbUri, TEMPLATE_DB } from "./global-setup";
 
 export interface TestDb {
   pool: Pool;
-  container: StartedPostgreSqlContainer;
   userId(name: string): Promise<number>;
   reset(): Promise<void>;
   stop(): Promise<void>;
 }
 
-/** Starts a real Postgres 16 in Docker and loads every db/*.sql file in order, like the app's database. */
+// Postgres refuses to copy a template that another CREATE DATABASE is copying at the same moment.
+const CREATE_DB_LOCK = 4242;
+
+/** A private copy of the app's database (schema + seed) on the shared test Postgres, dropped on stop(). */
 export async function startTestDb(): Promise<TestDb> {
-  const container = await new PostgreSqlContainer("postgres:16-alpine").start();
-  const pool = new Pool({ connectionString: container.getConnectionUri() });
-  for (const file of readdirSync(DB_DIR).filter((f) => f.endsWith(".sql")).sort()) {
-    await pool.query(readFileSync(join(DB_DIR, file), "utf8"));
+  const serverUri = inject("pgUri");
+  const name = `kudos_test_${randomUUID().replaceAll("-", "")}`;
+
+  const admin = new Pool({ connectionString: serverUri, max: 1 });
+  await admin.query("SELECT pg_advisory_lock($1)", [CREATE_DB_LOCK]);
+  try {
+    await admin.query(`CREATE DATABASE ${name} TEMPLATE ${TEMPLATE_DB}`);
+  } finally {
+    await admin.query("SELECT pg_advisory_unlock($1)", [CREATE_DB_LOCK]);
   }
+
+  const pool = new Pool({ connectionString: dbUri(serverUri, name) });
   return {
     pool,
-    container,
-    async userId(name: string) {
-      const { rows } = await pool.query<{ id: number }>("SELECT id FROM users WHERE name = $1", [name]);
-      if (!rows[0]) throw new Error(`no such seeded user: ${name}`);
+    async userId(userName: string) {
+      const { rows } = await pool.query<{ id: number }>("SELECT id FROM users WHERE name = $1", [userName]);
+      if (!rows[0]) throw new Error(`no such seeded user: ${userName}`);
       return rows[0].id;
     },
     async reset() {
@@ -33,7 +39,8 @@ export async function startTestDb(): Promise<TestDb> {
     },
     async stop() {
       await pool.end();
-      await container.stop();
+      await admin.query(`DROP DATABASE ${name} WITH (FORCE)`);
+      await admin.end();
     },
   };
 }

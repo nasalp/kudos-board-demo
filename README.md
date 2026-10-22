@@ -29,9 +29,10 @@ cd api
 npm ci
 npm test          # acceptance tests against a real Postgres (Testcontainers, needs Docker)
 npm run typecheck
+npm run mutation  # mutation testing with Stryker (~4 min): report in reports/mutation/index.html
 ```
 
-CI runs the API tests, checks that every Gherkin scenario has a test named
+CI runs the API tests, mutation tests on pull requests (fails below 80%), checks that every Gherkin scenario has a test named
 after its AC ID, and smoke-tests the full Docker Compose stack.
 
 ## Specs
