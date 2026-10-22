@@ -35,8 +35,8 @@ Used to demonstrate spec-first development with Claude Code and the
   each `describe()` is named after the AC ID it proves (`describe("AC-KUDOS-1", …)`).
 - **Real database in tests.** Acceptance tests use Testcontainers Postgres, never mocks. One container per
   run (`api/test/global-setup.ts`); each test file gets its own database copied from a template.
-- **Mutation score must not drop.** Stryker gates PRs at 70% (`api/stryker.config.mjs`, baseline 73.91%). A new survivor in
-  code your PR added needs a test; survivors in untouched code are legacy debt (see ADR 0001).
+- **Mutation score must not drop.** Stryker gates PRs at 95% (`api/stryker.config.mjs`; currently 100%). A new survivor in
+  code your PR added needs a test, or a `// Stryker disable next-line` comment if it's provably equivalent (see ADR 0001).
 - **Business rules live in `api/src/kudos.ts`**; `app.ts` only maps HTTP to those functions.
 - **Schema changes** go in a new numbered file in `api/db/` (e.g. `03-…sql`); never edit applied files.
 

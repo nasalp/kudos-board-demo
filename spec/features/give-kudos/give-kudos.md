@@ -32,6 +32,7 @@ the latest kudos so the team sees appreciation as it happens.
 |----------|-------------------|
 | Kudos to yourself | Rejected with a clear message; nothing is recorded |
 | Unknown team member | Rejected; nothing is recorded |
+| Giver or receiver missing | Rejected; nothing is recorded |
 
 ## User Stories
 
@@ -71,6 +72,23 @@ Scenario: Kudos to yourself is rejected
   When Anna gives kudos to herself
   Then the kudos is not recorded
   And Anna is told she can't give kudos to herself
+
+# Tests: api/test/give-kudos.acceptance.test.ts › AC-KUDOS-5
+@AC-KUDOS-5
+Scenario: Kudos to someone who isn't on the team is rejected
+  Given Anna is on the team
+  And nobody called Zofia is on the team
+  When Anna gives kudos to Zofia
+  Then the kudos is not recorded
+  And Anna is told Zofia isn't a known team member
+
+# Tests: api/test/give-kudos.acceptance.test.ts › AC-KUDOS-6
+@AC-KUDOS-6
+Scenario: Kudos that doesn't say who gives it or who gets it is rejected
+  Given Anna is on the team
+  When kudos arrives that names Anna as the giver but no receiver
+  Then the kudos is not recorded
+  And the sender is told both the giver and the receiver are required
 ```
 
 ### US-KUDOS-2: See who is appreciated
@@ -107,6 +125,13 @@ Scenario: Recent kudos are shown newest first
   And afterwards Celina gave kudos to Darek
   When anyone opens the board
   Then the recent list shows "Celina → Darek" above "Anna → Bartek"
+
+# Tests: api/test/give-kudos.acceptance.test.ts › AC-KUDOS-7
+@AC-KUDOS-7
+Scenario: The board lists the whole team alphabetically
+  Given Anna, Bartek, Celina and Darek are on the team
+  When anyone opens the board
+  Then they can pick from Anna, Bartek, Celina and Darek, in that order
 ```
 
 ## Scope
@@ -123,5 +148,6 @@ Scenario: Recent kudos are shown newest first
 
 ## Verification
 
-- Test output: `npm test` in `api/` — 4 acceptance tests, one per AC, against Postgres (Testcontainers)
+- Test output: `npm test` in `api/` — 7 acceptance tests, one per AC, against Postgres (Testcontainers).
+  AC-KUDOS-5..7 were added later to pin down existing behaviour that mutation testing showed was untested.
 - Traceability: `verify-ac-tests.sh` — every scenario has a test named after its AC ID

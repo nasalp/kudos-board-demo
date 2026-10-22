@@ -85,3 +85,51 @@ describe("AC-KUDOS-4", () => {
     ]);
   });
 });
+
+describe("AC-KUDOS-5", () => {
+  it("rejects kudos to or from someone who isn't on the team and records nothing", async () => {
+    const anna = await db.userId("Anna");
+
+    const toUnknown = await request(app).post("/api/kudos").send({ fromUserId: anna, toUserId: 99999 });
+    const fromUnknown = await request(app).post("/api/kudos").send({ fromUserId: 99999, toUserId: anna });
+
+    for (const res of [toUnknown, fromUnknown]) {
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe("Unknown team member.");
+    }
+    expect((await request(app).get("/api/kudos/recent")).body).toEqual([]);
+  });
+});
+
+describe("AC-KUDOS-6", () => {
+  it("rejects kudos without a giver or a receiver and records nothing", async () => {
+    const anna = await db.userId("Anna");
+
+    const requests = [
+      request(app).post("/api/kudos").send({ fromUserId: anna }),
+      request(app).post("/api/kudos").send({ toUserId: anna }),
+      request(app).post("/api/kudos").send({ fromUserId: "anna", toUserId: anna }),
+      request(app).post("/api/kudos"),
+    ];
+
+    for (const res of await Promise.all(requests)) {
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("fromUserId and toUserId are required.");
+    }
+    expect((await request(app).get("/api/kudos/recent")).body).toEqual([]);
+  });
+});
+
+describe("AC-KUDOS-7", () => {
+  it("lists the whole team alphabetically", async () => {
+    const res = await request(app).get("/api/users");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([
+      { id: await db.userId("Anna"), name: "Anna" },
+      { id: await db.userId("Bartek"), name: "Bartek" },
+      { id: await db.userId("Celina"), name: "Celina" },
+      { id: await db.userId("Darek"), name: "Darek" },
+    ]);
+  });
+});

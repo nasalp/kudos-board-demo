@@ -13,7 +13,7 @@ One file per feature at `spec/features/<slug>/<slug>.md`. Each file contains eve
 | Feature | Status | Stories | ACs | Spec |
 |---------|--------|---------|-----|------|
 | `daily-kudos-limit` | implemented | 2 | 7 | [daily-kudos-limit/daily-kudos-limit.md](daily-kudos-limit/daily-kudos-limit.md) |
-| `give-kudos` | implemented | 2 | 4 | [give-kudos/give-kudos.md](give-kudos/give-kudos.md) |
+| `give-kudos` | implemented | 2 | 7 | [give-kudos/give-kudos.md](give-kudos/give-kudos.md) |
 
 ## Adding a feature
 

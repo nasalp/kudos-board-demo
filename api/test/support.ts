@@ -5,6 +5,8 @@ import { dbUri, TEMPLATE_DB } from "./global-setup";
 
 export interface TestDb {
   pool: Pool;
+  /** Connection string of this test database, for connections outside the pool. */
+  uri: string;
   userId(name: string): Promise<number>;
   reset(): Promise<void>;
   stop(): Promise<void>;
@@ -26,9 +28,11 @@ export async function startTestDb(): Promise<TestDb> {
     await admin.query("SELECT pg_advisory_unlock($1)", [CREATE_DB_LOCK]);
   }
 
-  const pool = new Pool({ connectionString: dbUri(serverUri, name) });
+  const uri = dbUri(serverUri, name);
+  const pool = new Pool({ connectionString: uri });
   return {
     pool,
+    uri,
     async userId(userName: string) {
       const { rows } = await pool.query<{ id: number }>("SELECT id FROM users WHERE name = $1", [userName]);
       if (!rows[0]) throw new Error(`no such seeded user: ${userName}`);

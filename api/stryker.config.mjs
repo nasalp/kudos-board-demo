@@ -15,9 +15,9 @@ export default {
   mutate: ["src/**/*.ts", "!src/server.ts"],
   reporters: ["clear-text", "progress", "html"],
   htmlReporter: { fileName: "reports/mutation/index.html" },
-  // break = CI fails below this score. Set just under the measured baseline (73.91%) so it can only go up;
-  // raise it as survivors get killed.
-  thresholds: { high: 90, low: 80, break: 70 },
+  // break = CI fails below this score. Currently 100% (0 survivors); 95 leaves a little room for new code.
+  // A new survivor in code you added needs a test, or a "Stryker disable" comment explaining why it's equivalent.
+  thresholds: { high: 100, low: 95, break: 95 },
   concurrency: 4,
   timeoutMS: 60000,
 };

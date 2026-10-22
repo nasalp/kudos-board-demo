@@ -152,6 +152,12 @@ describe("AC-LIMIT-6", () => {
 });
 
 describe("AC-LIMIT-3", () => {
+  it("accepts UTC and region names with several parts as the team time zone", () => {
+    for (const timeZone of ["UTC", "Europe/Warsaw", "America/Argentina/Buenos_Aires"]) {
+      expect(() => createApp(db.pool, { timeZone }), timeZone).not.toThrow();
+    }
+  });
+
   it("refuses to start with a team time zone that isn't a region name", () => {
     expect(() => createApp(db.pool, { timeZone: "+05:00" })).toThrow(/time zone/i);
     expect(() => createApp(db.pool, { timeZone: "Mars/Olympus" })).toThrow(/time zone/i);
@@ -170,7 +176,18 @@ describe("AC-LIMIT-7", () => {
   });
 
   it("rejects an allowance request for an unknown team member", async () => {
-    expect((await request(app).get("/api/users/99999/allowance")).status).toBe(404);
-    expect((await request(app).get("/api/users/abc/allowance")).status).toBe(400);
+    for (const id of ["99999", "2147483647"]) {
+      const res = await request(app).get(`/api/users/${id}/allowance`);
+      expect(res.status, id).toBe(404);
+      expect(res.body.error).toBe("Unknown team member.");
+    }
+  });
+
+  it("rejects an allowance request with an id that can't be a team member", async () => {
+    for (const id of ["abc", "0", "-1", "1.5", "2147483648"]) {
+      const res = await request(app).get(`/api/users/${id}/allowance`);
+      expect(res.status, id).toBe(400);
+      expect(res.body.error).toBe("A valid team member id is required.");
+    }
   });
 });
