@@ -126,6 +126,17 @@ export async function leaderboard(pool: Pool): Promise<LeaderboardEntry[]> {
   return rows.map((r) => ({ name: r.name, count: Number(r.count) }));
 }
 
+export async function mostGenerous(pool: Pool): Promise<LeaderboardEntry[]> {
+  const { rows } = await pool.query<{ name: string; given: string }>(
+    `SELECT u.name, COUNT(k.id) AS given
+       FROM users u
+       JOIN kudos k ON k.from_user = u.id
+      GROUP BY u.name
+      ORDER BY COUNT(k.id) DESC, u.name ASC`,
+  );
+  return rows.map((r) => ({ name: r.name, count: Number(r.given) }));
+}
+
 export async function recentKudos(pool: Pool, limit = 10): Promise<Kudos[]> {
   const { rows } = await pool.query<{ id: number; from: string; to: string; created_at: Date }>(
     `SELECT k.id, f.name AS "from", t.name AS "to", k.created_at

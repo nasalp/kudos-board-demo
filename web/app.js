@@ -54,8 +54,9 @@ function renderAllowance({ limit, remaining }) {
 
 async function refresh() {
   const seq = ++refreshSeq;
-  const [board, recent, allowance] = await Promise.all([
+  const [board, givers, recent, allowance] = await Promise.all([
     api("/leaderboard"),
+    api("/leaderboard/givers"),
     api("/kudos/recent"),
     api(`/users/${me()}/allowance`),
   ]);
@@ -71,6 +72,14 @@ async function refresh() {
     }),
   );
   $("board-empty").hidden = board.length > 0;
+
+  $("givers").replaceChildren(
+    ...givers.map((e) => {
+      const li = document.createElement("li");
+      li.textContent = `${e.name} — gave ${e.count}`;
+      return li;
+    }),
+  );
 
   $("recent").replaceChildren(
     ...recent.map((k) => {
