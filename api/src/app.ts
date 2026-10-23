@@ -60,7 +60,7 @@ export function createApp(pool: Pool, options: AppOptions = {}) {
     res.json(result);
   });
 
-  app.get("/api/users/:id/recieved", async (req: Request, res: Response) => {
+  app.get("/api/users/:id/received", async (req: Request, res: Response) => {
     const userId = parseUserId(req.params.id);
     if (userId === null) {
       res.status(400).json({ error: "A valid team member id is required." });

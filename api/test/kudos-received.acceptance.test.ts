@@ -44,5 +44,14 @@ describe("AC-RECV-2", () => {
     const res = await request(app).get("/api/users/99999/received");
 
     expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: "Unknown team member." });
+  });
+
+  it("rejects a lookup with an id that can't be a team member", async () => {
+    for (const id of ["abc", "0", "-1"]) {
+      const res = await request(app).get(`/api/users/${id}/received`);
+      expect(res.status, id).toBe(400);
+      expect(res.body).toEqual({ error: "A valid team member id is required." });
+    }
   });
 });

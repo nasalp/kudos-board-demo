@@ -8,7 +8,9 @@ async function api(path, options) {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
-  const body = res.status === 204 ? null : await res.json();
+  // Non-JSON replies (e.g. a proxy or framework error page) must not surface as a JSON parse error.
+  const isJson = res.headers.get("Content-Type")?.includes("application/json");
+  const body = res.status === 204 || !isJson ? null : await res.json();
   if (!res.ok) throw new Error(body?.error ?? `Request failed (${res.status})`);
   return body;
 }
