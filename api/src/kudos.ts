@@ -127,7 +127,7 @@ export async function leaderboard(pool: Pool): Promise<LeaderboardEntry[]> {
 }
 
 export async function mostGenerous(pool: Pool): Promise<LeaderboardEntry[]> {
-  const { rows } = await pool.query<{ name: string }>(
+  const { rows } = await pool.query<{ name: string; given: string }>(
     `SELECT u.name, COUNT(k.id) AS given
        FROM users u
        JOIN kudos k ON k.from_user = u.id
